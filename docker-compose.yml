@@ -52,9 +52,17 @@ services:
     depends_on:
       - influxdb
     
-  mqtt_python:
-    build: ./mqtt_python
-    container_name: mqtt_python
+  mqtt_python_1:
+    build: ./mqtt_python_1
+    container_name: mqtt_python_1
+    depends_on:
+      - mosquitto
+    networks:
+      - iot_network
+
+  mqtt_python_2:
+    build: ./mqtt_python_2
+    container_name: mqtt_python_2
     depends_on:
       - mosquitto
     networks:
