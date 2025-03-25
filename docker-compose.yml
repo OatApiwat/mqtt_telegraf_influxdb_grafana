@@ -11,6 +11,7 @@ services:
       - ./mosquitto/log:/mosquitto/log
     networks:
       - iot_network
+    restart: unless-stopped
 
   telegraf:
     image: telegraf:latest
@@ -24,6 +25,7 @@ services:
     depends_on:
       - mosquitto
       - influxdb
+    restart: unless-stopped
 
   influxdb:
     image: influxdb:1.8
@@ -37,6 +39,7 @@ services:
       - ./influxdb/data:/var/lib/influxdb
     networks:
       - iot_network
+    restart: unless-stopped
 
   grafana:
     image: grafana/grafana
@@ -51,6 +54,7 @@ services:
       - iot_network
     depends_on:
       - influxdb
+    restart: unless-stopped
     
   mqtt_python_1:
     build: ./mqtt_python_1
@@ -59,6 +63,7 @@ services:
       - mosquitto
     networks:
       - iot_network
+    restart: unless-stopped
 
   mqtt_python_2:
     build: ./mqtt_python_2
@@ -67,6 +72,7 @@ services:
       - mosquitto
     networks:
       - iot_network
+    restart: unless-stopped
 
 networks:
   iot_network:
