@@ -2,6 +2,8 @@ import time
 import datetime
 import pymssql
 from influxdb import InfluxDBClient
+from datetime import timedelta
+import paho.mqtt.client as mqtt
 
 # ==========================
 # 🔹 CONFIGURATION SETTINGS
@@ -31,6 +33,17 @@ influx_client.switch_database(INFLUXDB_DATABASE)
 # ==========================
 def connect_mssql():
     return pymssql.connect(server=MSSQL_SERVER, user=MSSQL_USER, password=MSSQL_PASSWORD, database=MSSQL_DATABASE)
+
+# ==========================
+#  CONFIGURATION SETTINGS (เพิ่ม MQTT)
+# ==========================
+MQTT_BROKER = 'localhost'  # IP ของ MQTT Broker
+MQTT_PORT = 1883
+MQTT_TOPIC_CANNOT_INSERT = 'iot/cannot_insert'
+
+# เชื่อมต่อ MQTT client
+mqtt_client = mqtt.Client()
+mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
 
 # ==========================
 # 🔹 FUNCTION TO CREATE TABLES
@@ -100,7 +113,11 @@ def insert_data_to_mssql(data):
     for table_name, rows in data.items():
         for row in rows:
             # แปลงเวลาให้ตรงกับรูปแบบที่ MSSQL รองรับ
-            timestamp = datetime.datetime.strptime(row['time'], '%Y-%m-%dT%H:%M:%S.%fZ') 
+            timestamp = datetime.datetime.strptime(row['time'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            # บวกเวลา 7 ชั่วโมง
+            timestamp = timestamp + timedelta(hours=7)
+            
+
             topic = row['topic']
             values = {key: row[key] for key in row if key not in ['time', 'topic', 'host']}
 
@@ -113,9 +130,26 @@ def insert_data_to_mssql(data):
                 columns = ', '.join(['topic'] + list(values.keys()))
                 placeholders = ', '.join(['%s'] * (len(values) + 1))
                 insert_query = f"INSERT INTO {table_name} (time, {columns}) VALUES (%s, {placeholders})"
-                cursor.execute(insert_query, (timestamp, topic, *values.values()))
-                conn.commit()
-                print(f"✅ Inserted: {timestamp} | Table: {table_name}")
+                try:
+                    cursor.execute(insert_query, (timestamp, topic, *values.values()))
+                    conn.commit()
+                    
+                    # ตรวจสอบว่ามีข้อมูลถูก insert เข้าไปจริงๆ หรือไม่
+                    check_inserted_query = f"SELECT COUNT(*) FROM {table_name} WHERE time = %s AND topic = %s"
+                    cursor.execute(check_inserted_query, (timestamp, topic))
+                    inserted_count = cursor.fetchone()[0]
+
+                    if inserted_count == 0:  # ถ้ายังไม่พบข้อมูลที่ถูก insert
+                        raise Exception(f"Data not inserted properly for {timestamp} into {table_name}")
+                    else:
+                        print(f"✅ Inserted: {timestamp} | Table: {table_name}")
+                except Exception as e:
+                    conn.rollback()  # Rollback เมื่อเกิดข้อผิดพลาด
+                    print(f"⚠️ Failed to insert: {timestamp} | Table: {table_name}")
+                    # ส่งข้อมูลไปที่ MQTT topic iot/cannot_insert
+                    mqtt_message = f"Failed to insert at {timestamp} into {table_name}. Error: {str(e)}"
+                    mqtt_client.publish(MQTT_TOPIC_CANNOT_INSERT, mqtt_message)
+                    print(f"📡 Published to MQTT: {mqtt_message}")
 
             else:
                 print(f"⚠️ Data already exists for: {timestamp} | Table: {table_name}")
