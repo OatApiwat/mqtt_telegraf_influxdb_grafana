@@ -3,4 +3,3 @@ pymssql
 paho-mqtt
 numpy
 scipy
-statistics

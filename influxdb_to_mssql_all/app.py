@@ -8,7 +8,7 @@ import paho.mqtt.client as mqtt
 # ==========================
 # 🔹 CONFIGURATION SETTINGS
 # ==========================
-INFLUXDB_HOST = 'localhost'
+INFLUXDB_HOST = 'influxdb'
 INFLUXDB_PORT = 8086
 INFLUXDB_DATABASE = 'iot_data'
 INFLUXDB_MEASUREMENT = 'mqtt_consumer'
@@ -37,7 +37,7 @@ def connect_mssql():
 # ==========================
 #  CONFIGURATION SETTINGS (เพิ่ม MQTT)
 # ==========================
-MQTT_BROKER = 'localhost'  # IP ของ MQTT Broker
+MQTT_BROKER = 'mosquitto'  # IP ของ MQTT Broker
 MQTT_PORT = 1883
 MQTT_TOPIC_CANNOT_INSERT = 'iot/cannot_insert'
 

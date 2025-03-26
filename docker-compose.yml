@@ -84,6 +84,16 @@ services:
       - iot_network
     restart: unless-stopped
 
+  influxdb_to_mssql_statistics:
+    build: ./influxdb_to_mssql_statistics
+    container_name: influxdb_to_mssql_statistics
+    depends_on:
+      - influxdb
+      - mosquitto
+    networks:
+      - iot_network
+    restart: unless-stopped
+
 networks:
   iot_network:
     driver: bridge
