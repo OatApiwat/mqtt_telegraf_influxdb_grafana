@@ -1,2 +1,3 @@
 influxdb
 pymssql
+paho-mqtt

@@ -74,11 +74,12 @@ services:
       - iot_network
     restart: unless-stopped
 
-  influxdb_to_mssql:
-    build: ./influxdb_to_mssql
-    container_name: influxdb_to_mssql
+  influxdb_to_mssql_all:
+    build: ./influxdb_to_mssql_all
+    container_name: influxdb_to_mssql_all
     depends_on:
       - influxdb
+      - mosquitto
     networks:
       - iot_network
     restart: unless-stopped
