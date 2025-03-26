@@ -55,7 +55,7 @@ def create_mssql_tables():
 
     for topic in INFLUXDB_MQTT_TOPICS:
         table_name = topic.replace("/", "_").replace("-", "_") # เปลี่ยน '/' เป็น '_'
-        
+        table_name = f"raw_{table_name}"  # เพิ่มคำว่า "raw" นำหน้าชื่อ table
         create_table_query = f"""
         IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='{table_name}' AND xtype='U')
         CREATE TABLE {table_name} (
@@ -92,6 +92,7 @@ def fetch_influxdb_data():
     all_data = {}
     for topic in INFLUXDB_MQTT_TOPICS:
         table_name = topic.replace('/', '_')  # เปลี่ยนชื่อ Table
+        table_name = f"raw_{table_name}"  # เพิ่มคำว่า "raw" นำหน้าชื่อ table
         query = f"""
             SELECT * FROM "{INFLUXDB_MEASUREMENT}"
             WHERE time >= '{start_time.isoformat()}Z' AND time < '{end_time.isoformat()}Z'
